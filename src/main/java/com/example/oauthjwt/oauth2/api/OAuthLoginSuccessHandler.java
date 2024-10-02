@@ -28,14 +28,20 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    @Value("${jwt.redirect}")
-    private String REDIRECT_URI;
+    @Value("${jwt.redirect.access}")
+    private String ACCESS_TOKEN_REDIRECT_URI; // 기존 유저 로그인 시 리다이렉트 URI
+
+    @Value("${jwt.redirect.register}")
+    private String REGISTER_TOKEN_REDIRECT_URI; // 신규 유저 로그인 시 리다이렉트 URI
 
     @Value("${jwt.access-token.expiration-time}")
     private long ACCESS_TOKEN_EXPIRATION_TIME;
 
     @Value("${jwt.refresh-token.expiration-time}")
     private long REFRESH_TOKEN_EXPIRATION_TIME;
+
+    @Value(("600000"))
+    private long REGISTER_TOKEN_EXPIRATION_TIME;
 
     private OAuth2UserInfo oAuth2UserInfo = null;
 
@@ -64,45 +70,35 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
         User user;
 
         if (optionalUser.isEmpty()) {
-            log.info("신규 유저입니다. 등록을 진행합니다.");
-            // 신규 유저인 경우 도메인 객체 생성
-            user = User.builder()
-                    .userId(UUID.randomUUID())
-                    .name(name)
-                    .provider(provider)
-                    .providerId(providerId)
-                    .build();
-            // 도메인 객체 저장 (변환은 어댑터가 처리)
-            userRepository.save(user);
+            log.info("신규 유저입니다. 레지스터 토큰을 발급합니다.");
+            String registerToken = URLEncoder.encode(jwtUtil.generateRegisterToken(provider, providerId, REGISTER_TOKEN_EXPIRATION_TIME));
+            String encodedName = URLEncoder.encode(name, "UTF-8");
+            String redirectUri = String.format(REGISTER_TOKEN_REDIRECT_URI, encodedName, registerToken);
+            getRedirectStrategy().sendRedirect(request, response, redirectUri);
         } else {
-            log.info("기존 유저입니다.");
+            log.info("기존 유저입니다. 액세스 토큰과 리프레쉬 토큰을 발급합니다.");
             user = optionalUser.get();
             refreshTokenRepository.deleteByUserId(user.getUserId());
+            // 리프레쉬 토큰 발급 후 저장
+            String refreshToken = jwtUtil.generateRefreshToken(user.getUserId(), REFRESH_TOKEN_EXPIRATION_TIME);
+
+            // 도메인 객체로 리프레시 토큰 생성
+            RefreshToken refreshTokenDomain = RefreshToken.builder()
+                    .userId(user.getUserId())
+                    .token(refreshToken)
+                    .build();
+
+            // 도메인 객체 저장 (어댑터가 처리)
+            refreshTokenRepository.save(refreshTokenDomain);
+
+            // 액세스 토큰 발급
+            String accessToken = jwtUtil.generateAccessToken(user.getUserId(), ACCESS_TOKEN_EXPIRATION_TIME);
+
+            // 리다이렉트 처리
+            String encodedName = URLEncoder.encode(name, "UTF-8");
+            String redirectUri = String.format(ACCESS_TOKEN_REDIRECT_URI, encodedName, accessToken, refreshToken);
+            getRedirectStrategy().sendRedirect(request, response, redirectUri);
         }
-
-        log.info("유저 이름 : {}", name);
-        log.info("PROVIDER : {}", provider);
-        log.info("PROVIDER_ID : {}", providerId);
-
-        // 리프레쉬 토큰 발급 후 저장
-        String refreshToken = jwtUtil.generateRefreshToken(user.getUserId(), REFRESH_TOKEN_EXPIRATION_TIME);
-
-        // 도메인 객체로 리프레시 토큰 생성
-        RefreshToken refreshTokenDomain = RefreshToken.builder()
-                .userId(user.getUserId())
-                .token(refreshToken)
-                .build();
-
-        // 도메인 객체 저장 (어댑터가 처리)
-        refreshTokenRepository.save(refreshTokenDomain);
-
-        // 액세스 토큰 발급
-        String accessToken = jwtUtil.generateAccessToken(user.getUserId(), ACCESS_TOKEN_EXPIRATION_TIME);
-
-        // 리다이렉트 처리
-        String encodedName = URLEncoder.encode(name, "UTF-8");
-        String redirectUri = String.format(REDIRECT_URI, encodedName, accessToken, refreshToken);
-        getRedirectStrategy().sendRedirect(request, response, redirectUri);
     }
 }
 

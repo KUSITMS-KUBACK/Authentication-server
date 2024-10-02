@@ -33,6 +33,9 @@ public class UserEntity {
     @Column(name = "provider_id", nullable = false, length = 50)
     private String providerId;
 
+    @Column(name = "phone", nullable = false, length = 20)
+    private String phone;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, length = 20)
     private LocalDateTime createdAt;
@@ -48,6 +51,7 @@ public class UserEntity {
                 .name(name)
                 .provider(provider)
                 .providerId(providerId)
+                .phone(phone)
                 .build();
     }
 
@@ -58,6 +62,7 @@ public class UserEntity {
                 .name(user.getName())
                 .provider(user.getProvider())
                 .providerId(user.getProviderId())
+                .phone(user.getPhone())
                 .build();
     }
 }

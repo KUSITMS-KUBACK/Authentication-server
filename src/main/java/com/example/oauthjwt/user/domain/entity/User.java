@@ -13,4 +13,5 @@ public class User {
     private String name;
     private String provider;
     private String providerId;
+    private String phone;
 }
