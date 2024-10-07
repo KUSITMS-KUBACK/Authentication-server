@@ -12,7 +12,8 @@ import org.springframework.http.HttpStatus;
 public enum TokenErrorResult implements BaseErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "401", "유효하지 않은 토큰입니다."),
     INVALID_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "401", "유효하지 않은 액세스 토큰입니다."),
-    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "401", "유효하지 않은 리프레쉬 토큰입니다.");
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "401", "유효하지 않은 리프레쉬 토큰입니다."),
+    _FAILED_SAVE_REDIS(HttpStatus.INTERNAL_SERVER_ERROR, "500", "Redis 저장에 실패하였습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
