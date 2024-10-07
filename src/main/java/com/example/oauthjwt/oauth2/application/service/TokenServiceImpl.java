@@ -23,13 +23,16 @@ public class TokenServiceImpl implements TokenService {
     private final JWTUtil jwtUtil;
 
     @Override
-    public TokenResponse reissueAccessToken(String authorizationHeader) {
-        String refreshToken = jwtUtil.getTokenFromHeader(authorizationHeader);
+    public TokenResponse reissueAccessToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            throw new TokenException(TokenErrorResult.INVALID_REFRESH_TOKEN); // 리프레시 토큰이 없으면 예외 처리
+        }
+
         String userId = jwtUtil.getUserIdFromToken(refreshToken);
 
         // 1. 도메인 객체를 사용하여 리프레시 토큰 조회
         RefreshToken existRefreshToken = refreshTokenRepository.findByUserId(UUID.fromString(userId))
-                .orElseThrow(() -> new TokenException(TokenErrorResult.INVALID_REFRESH_TOKEN)); // 없을 경우 예외 처리
+                .orElseThrow(() -> new TokenException(TokenErrorResult.INVALID_REFRESH_TOKEN));
 
         // 2. 리프레시 토큰이 다르거나 만료된 경우 예외 처리
         if (!existRefreshToken.getToken().equals(refreshToken) || jwtUtil.isTokenExpired(refreshToken)) {
@@ -43,5 +46,9 @@ public class TokenServiceImpl implements TokenService {
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .build();
+    }
+
+    public long getAccessTokenExpirationTime() {
+        return ACCESS_TOKEN_EXPIRATION_TIME;
     }
 }
