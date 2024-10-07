@@ -2,6 +2,7 @@ package com.example.oauthjwt.oauth2.api;
 
 import com.example.oauthjwt.common.dto.GoogleUserInfo;
 import com.example.oauthjwt.common.dto.KakaoUserInfo;
+import com.example.oauthjwt.common.dto.NaverUserInfo;
 import com.example.oauthjwt.common.dto.OAuth2UserInfo;
 import com.example.oauthjwt.oauth2.domain.entity.RefreshToken;
 import com.example.oauthjwt.user.domain.entity.User;
@@ -63,6 +64,10 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
             case "google" -> {
                 log.info("구글 로그인 요청");
                 oAuth2UserInfo = new GoogleUserInfo(token.getPrincipal().getAttributes());
+            }
+            case "naver" -> {
+                log.info("네이버 로그인 요청");
+                oAuth2UserInfo = new NaverUserInfo(token.getPrincipal().getAttributes());
             }
         }
 
