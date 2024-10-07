@@ -22,9 +22,9 @@ public class UserAdapter implements UserRepository {
     }
 
     @Override
-    public Optional<User> findByProviderId(String providerId) {
+    public Optional<User> findByProvider(String provider) {
         // Optional을 사용하여 null 체크 처리
-        return jpaUserRepository.findByProviderId(providerId)
+        return jpaUserRepository.findByProvider(provider)
                 .map(UserEntity::toDomain);
     }
 
