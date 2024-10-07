@@ -33,4 +33,9 @@ public class UserAdapter implements UserRepository {
         UserEntity userEntity = UserEntity.fromDomain(user); // User -> UserEntity 변환
         jpaUserRepository.save(userEntity);
     }
+
+    @Override
+    public User findByPhone(String phone) {
+        return null;
+    }
 }

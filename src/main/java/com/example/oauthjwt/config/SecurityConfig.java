@@ -4,6 +4,7 @@ package com.example.oauthjwt.config;
 import com.example.oauthjwt.oauth2.api.OAuthLoginFailureHandler;
 import com.example.oauthjwt.oauth2.api.OAuthLoginSuccessHandler;
 import com.example.oauthjwt.oauth2.infra.jwt.JWTFilter;
+import com.example.oauthjwt.oauth2.infra.jwt.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +26,7 @@ public class SecurityConfig {
     private final OAuthLoginSuccessHandler oAuthLoginSuccessHandler;
     private final OAuthLoginFailureHandler oAuthLoginFailureHandler;
     private final JWTFilter jwtFilter;
-
+    private final JWTUtil jwtUtil;
     // CORS 설정
     CorsConfigurationSource corsConfigurationSource() {
         return request -> {
@@ -47,14 +48,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize ->
                         authorize
                                 .requestMatchers("/**").permitAll()
+                                .anyRequest().authenticated()
                 )
-
                 .oauth2Login(oauth -> // OAuth2 로그인 기능에 대한 여러 설정의 진입점
                         oauth
                                 .successHandler(oAuthLoginSuccessHandler) // 로그인 성공 시 핸들러
                                 .failureHandler(oAuthLoginFailureHandler) // 로그인 실패 시 핸들러
                 )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class); // JWTFilter를 인증 필터 전에 추가;
+                .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class); // JWTFilter를 인증 필터 전에 추가;
 
         return httpSecurity.build();
     }
