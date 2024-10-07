@@ -138,4 +138,17 @@ public class JWTUtil {
             throw new TokenException(TokenErrorResult.INVALID_TOKEN);
         }
     }
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                    .setSigningKey(this.getSigningKey())
+                    .build()
+                    .parseClaimsJws(token);  // 토큰의 유효성 검증
+            log.info("유효한 토큰입니다.");
+            return true; // 유효한 토큰이면 true 반환
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("유효하지 않은 토큰입니다.");
+            throw new TokenException(TokenErrorResult.INVALID_TOKEN);  // 토큰이 유효하지 않으면 예외 처리
+        }
+    }
 }

@@ -9,6 +9,7 @@ import com.example.oauthjwt.user.domain.entity.User;
 import com.example.oauthjwt.oauth2.infra.jwt.JWTUtil;
 import com.example.oauthjwt.oauth2.domain.repository.RefreshTokenRepository;
 import com.example.oauthjwt.user.domain.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -74,9 +75,10 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
         // 정보 추출
         String providerId = oAuth2UserInfo.getProviderId();
         String name = oAuth2UserInfo.getName();
+        log.info(providerId);
 
         // 1. Optional<User>로 처리
-        Optional<User> optionalUser = userRepository.findByProviderId(providerId);
+        Optional<User> optionalUser = userRepository.findByProvider(providerId);
         User user;
 
         if (optionalUser.isEmpty()) {
@@ -103,12 +105,27 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
 
             // 액세스 토큰 발급
             String accessToken = jwtUtil.generateAccessToken(user.getUserId(), ACCESS_TOKEN_EXPIRATION_TIME);
+            // 액세스 토큰과 리프레시 토큰을 쿠키에 저장
+            addCookie(request,response, "accessToken", accessToken, (int) ACCESS_TOKEN_EXPIRATION_TIME / 1000);
+            addCookie(request,response, "refreshToken", refreshToken, (int) REFRESH_TOKEN_EXPIRATION_TIME / 1000);
 
-            // 리다이렉트 처리
-            String encodedName = URLEncoder.encode(name, "UTF-8");
-            String redirectUri = String.format(ACCESS_TOKEN_REDIRECT_URI, encodedName, accessToken, refreshToken);
-            getRedirectStrategy().sendRedirect(request, response, redirectUri);
+            // 리다이렉트 처리 (쿠키로 토큰 전달했으므로 토큰을 쿼리로 전달할 필요 없음)
+            getRedirectStrategy().sendRedirect(request, response, ACCESS_TOKEN_REDIRECT_URI);
         }
+    }
+    // 쿠키 추가 메서드
+    private void addCookie(HttpServletRequest request, HttpServletResponse response, String name, String value, int maxAge) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setHttpOnly(true);  // XSS 공격 방지
+
+        // 로컬에서는 Secure 속성 사용 안함 (배포 환경에서는 true로 설정)
+        cookie.setSecure(!"localhost".equals(request.getServerName()));
+
+        cookie.setPath("/");       // 모든 경로에서 접근 가능
+        cookie.setMaxAge(maxAge);  // 쿠키 유효기간 설정
+
+        // 쿠키를 응답에 추가
+        response.addCookie(cookie);
     }
 }
 

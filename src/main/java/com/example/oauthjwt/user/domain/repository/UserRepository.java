@@ -8,6 +8,6 @@ import java.util.UUID;
 
 public interface UserRepository {
     Optional<User> findByUserId(UUID userId);
-    Optional<User> findByProviderId(String providerId);
+    Optional<User> findByProvider(String provide);
     void save(User user);
 }
