@@ -1,5 +1,6 @@
 package com.example.oauthjwt.oauth2.api;
 
+import com.example.oauthjwt.common.dto.GoogleUserInfo;
 import com.example.oauthjwt.common.dto.KakaoUserInfo;
 import com.example.oauthjwt.common.dto.OAuth2UserInfo;
 import com.example.oauthjwt.oauth2.domain.entity.RefreshToken;
@@ -58,6 +59,10 @@ public class OAuthLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHand
             case "kakao" -> {
                 log.info("카카오 로그인 요청");
                 oAuth2UserInfo = new KakaoUserInfo(token.getPrincipal().getAttributes());
+            }
+            case "google" -> {
+                log.info("구글 로그인 요청");
+                oAuth2UserInfo = new GoogleUserInfo(token.getPrincipal().getAttributes());
             }
         }
 
